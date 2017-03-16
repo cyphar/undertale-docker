@@ -16,20 +16,22 @@ command (this part is all done with free software):
 
 In order to run this container use the following command. This assumes that
 group `17` corresponds to the `audio` group on your host machine (the group
-that owns `/dev/snd/*` devices). Also currently I haven't figured out how to
-make `Xauthority` act properly, so I run `xhost +si:localuser:chara` to allow
-the container to create windows.
+that owns `/dev/snd/*` devices). This also is available as a script in
+`undertale.sh`.
 
 ```
-% xhost +si:localuser:cyphar
+% XAUTH=$(mktemp --tmpdir docker-xauth.XXXXXX)
+% xauth nlist :0 | sed -e 's/^..../ffff/' | xauth -f $XAUTH nmerge -
 localuser:cyphar being added to access control list
-% docker run -itd --rm -u chara:17 \
-             -v $HOME/.config/UNDERTALE_linux:/home/chara/.config/UNDERTALE_linux:rw \
-             -v /tmp/.X11-unix:/tmp/.X11-unix \
-             -e DISPLAY=unix$DISPLAY \
-             --device /dev/snd:/dev/snd:rwm \
-             --net none \
-             cyphar/undertale
+% docker run -it --rm -u chara:17 \
+		-v $HOME/.config/UNDERTALE_linux:/home/chara/.config/UNDERTALE_linux:rw \
+		-v /tmp/.X11-unix:/tmp/.X11-unix:rw \
+		-e DISPLAY=unix$DISPLAY \
+		-v $XAUTH:$XAUTH:ro \
+		-e XAUTHORITY=$XAUTH \
+		--device /dev/snd:/dev/snd:rwm \
+		--net none \
+		cyphar/undertale
 ```
 
 If your save files aren't being created, make sure that
